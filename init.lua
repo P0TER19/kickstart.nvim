@@ -120,7 +120,6 @@ end)
 
 -- Enable break indent
 vim.opt.breakindent = true
-
 -- Save undo history
 vim.opt.undofile = true
 
@@ -623,7 +622,7 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        -- pyright = {},
+        pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -633,6 +632,8 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
+        ruff_lsp = {},
+        ruff = {},
 
         lua_ls = {
           -- cmd = {...},
@@ -657,27 +658,94 @@ require('lazy').setup({
       --
       --  You can press `g?` for help in this menu.
       require('mason').setup()
-
-      -- You can add other tools here that you want Mason to install
-      -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-      })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
       require('mason-lspconfig').setup {
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
+        ensure_installed = { 'ruff' },
+      }
+
+      require('nvim-tree').setup()
+      require('lspconfig').pyright.setup {
+        capabilities = capabilities,
+        settings = {
+          python = {
+            analysis = {
+              autoSearchPaths = true,
+              useLibraryCodeForTypes = true,
+              diagnosticMode = 'workspace',
+              typeCheckingMode = 'basic',
+              completeFunctionParens = true, -- Add parentheses to function completions
+              autoImportCompletions = true, -- Auto-import completions
+            },
+          },
         },
       }
+      require('lspconfig').ruff.setup {
+        settings = {
+          ruff = {
+            lint = {
+              -- Enable auto-fixing
+              run = 'onSave', -- or "onType"
+            },
+            -- Specify coding style (like line length)
+            lineLength = 88, -- default value from Black formatter
+
+            -- Select specific error/warning codes to enable
+            -- See https://beta.ruff.rs/docs/rules/
+            select = {
+              'E', -- pycodestyle errors
+              'F', -- pyflakes
+              'I', -- isort
+              'W', -- pycodestyle warnings
+            },
+
+            -- Ignore specific rules
+            ignore = {
+              -- "E501",  -- line too long
+            },
+
+            -- Per-project configuration
+            -- If you have a pyproject.toml or ruff.toml, set this to true
+            --useConfiguration = true,
+
+            -- Organize imports
+            organizeImports = true,
+
+            -- Fix code
+            fixAll = true,
+          },
+        },
+      }
+      require('lspconfig').lua_ls.setup {
+        capabilities = capabilities,
+        settings = {
+          Lua = {
+            completion = {
+              callSnippet = 'Replace',
+            },
+          },
+        },
+      }
+      -- You can add other tools here that you want Mason to install
+      -- for you, so that they are available from within Neovim.
+      --local ensure_installed = vim.tbl_keys(servers or {})
+      --vim.list_extend(ensure_installed, {
+      --'stylua', -- Used to format Lua code
+      --'ruff_lsp',
+      --'ruff',
+      --})
+      --require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+
+      --require('mason-lspconfig').setup {
+      --handlers = {
+      --function(server_name)
+      -- local server = servers[server_name] or {}
+      -- This handles overriding only values explicitly passed
+      -- by the server configuration above. Useful when disabling
+      -- certain features of an LSP (for example, turning off formatting for ts_ls)
+      --server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+      --require('lspconfig')[server_name].setup(server)
+      --end,
+      --},
+      --}
     end,
   },
 
@@ -791,11 +859,11 @@ require('lazy').setup({
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          --['<C-y>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
-          --['<CR>'] = cmp.mapping.confirm { select = true },
+          ['<CR>'] = cmp.mapping.confirm { select = true },
           --['<Tab>'] = cmp.mapping.select_next_item(),
           --['<S-Tab>'] = cmp.mapping.select_prev_item(),
 
@@ -835,6 +903,7 @@ require('lazy').setup({
           { name = 'nvim_lsp' },
           { name = 'luasnip' },
           { name = 'path' },
+          { name = 'ruff' },
         },
       }
     end,
