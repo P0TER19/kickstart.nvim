@@ -662,7 +662,6 @@ require('lazy').setup({
         ensure_installed = { 'ruff' },
       }
 
-      require('nvim-tree').setup()
       require('lspconfig').pyright.setup {
         capabilities = capabilities,
         settings = {
